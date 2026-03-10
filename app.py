@@ -199,7 +199,8 @@ def get_open_interest(symbol):
 
 
 def get_long_short_ratio(symbol):
-    url = f"{BINANCE_REST_PERP2}/globalLongShortAccountRatio?symbol={symbol}USDT&period=1h&limit=2"
+    # Try v1 endpoint instead of v2
+    url = f"{BINANCE_REST_PERP}/globalLongShortAccountRatio?symbol={symbol}USDT&period=1h&limit=2"
     data = fetch_json(url, timeout=5)
     if not data or not isinstance(data, list) or len(data) == 0:
         return None, None
