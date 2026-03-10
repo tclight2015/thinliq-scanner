@@ -507,11 +507,11 @@ function params() {
 }
 
 async function pollUntilDone(p) {
-  for (let i = 0; i < 60; i++) {
+ for (let i = 0; i < 90; i++) {
     await sleep(2000);
     const res = await fetch(`/api/scan?${p}`);
     const data = await res.json();
-    if (!data.scanning && (data.results || data.count >= 0)) {
+    if (!data.scanning && data.last_scan > 0) {
       results = data.results || [];
       renderTable();
       renderStats();
@@ -521,7 +521,6 @@ async function pollUntilDone(p) {
       return;
     }
   }
-}
 
 // ══════════════════════════════════════════════
 // TABLE
