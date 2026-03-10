@@ -481,9 +481,11 @@ async function triggerScan() {
 
   const p = params();
   try {
-    // Trigger fresh scan
+    // 先強制觸發
     await fetch(`/api/scan?${p}&force=1`);
-    // Poll until done
+    // 等2秒讓掃描啟動
+    await sleep(2000);
+    // 再輪詢
     await pollUntilDone(p);
   } catch(e) {
     console.error(e);
