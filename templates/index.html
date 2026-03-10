@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>薄流動性動能掃描儀</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060a0f;
+  --panel: #0c1219;
+  --border: #1a2a3a;
+  --accent: #00d4ff;
+  --accent2: #ff6b35;
+  --accent3: #00ff9d;
+  --warn: #ffcc00;
+  --danger: #ff3355;
+  --text: #c8d8e8;
+  --dim: #4a6a8a;
+  --mono: 'Share Tech Mono', monospace;
+  --ui: 'Rajdhani', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ui);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,.012) 2px, rgba(0,212,255,.012) 4px);
+  pointer-events: none; z-index: 9999;
+}
+
+body::after {
+  content: '';
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(0,212,255,.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(255,107,53,.03) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+
+.wrap { position:relative; z-index:1; padding:14px; max-width:1700px; margin:0 auto; }
+
+/* ── Header ─────────────────────────────────── */
+header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 18px; border-bottom:1px solid var(--border);
+  margin-bottom:14px; background:rgba(0,212,255,.02);
+}
+.logo { display:flex; align-items:center; gap:12px; }
+.logo-icon {
+  width:34px; height:34px; border:2px solid var(--accent);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); color:var(--accent); font-size:16px;
+  animation:pulse-bdr 2s ease-in-out infinite;
+}
+@keyframes pulse-bdr {
+  0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,.4)}
+  50%{box-shadow:0 0 0 6px rgba(0,212,255,0)}
+}
+.logo h1 { font-size:19px; font-weight:700; letter-spacing:3px; color:var(--accent); text-transform:uppercase; }
+.logo span { font-size:10px; color:var(--dim); letter-spacing:2px; display:block; font-family:var(--mono); }
+.hdr-right { display:flex; align-items:center; gap:18px; }
+.live-dot { width:8px; height:8px; border-radius:50%; background:var(--accent3); animation:blink 1s ease-in-out infinite; display:inline-block; margin-right:6px; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+.live-txt { font-family:var(--mono); font-size:12px; color:var(--accent3); }
+
+/* ── Tabs ────────────────────────────────────── */
+.tabs { display:flex; gap:0; margin-bottom:14px; border-bottom:1px solid var(--border); }
+.tab {
+  padding:9px 22px; cursor:pointer;
+  font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+  font-family:var(--mono); color:var(--dim); border:none; background:transparent;
+  border-bottom:2px solid transparent; transition:all .2s;
+}
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* ── Controls ───────────────────────────────── */
+.controls {
+  display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;
+}
+.cg {
+  display:flex; align-items:center; gap:7px;
+  background:var(--panel); border:1px solid var(--border); padding:7px 13px;
+}
+.cg label { font-size:10px; color:var(--dim); letter-spacing:1px; text-transform:uppercase; font-family:var(--mono); }
+.cg input, .cg select {
+  background:transparent; border:none; border-bottom:1px solid var(--accent);
+  color:var(--accent); font-family:var(--mono); font-size:13px; padding:2px 5px;
+  width:85px; outline:none;
+}
+.cg select { width:115px; cursor:pointer; }
+.cg select option { background:var(--panel); }
+.btn {
+  background:transparent; border:2px solid var(--accent); color:var(--accent);
+  font-family:var(--ui); font-size:12px; font-weight:700; letter-spacing:3px;
+  padding:9px 24px; cursor:pointer; text-transform:uppercase; position:relative; overflow:hidden;
+  transition:all .2s;
+}
+.btn::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:rgba(0,212,255,.12); transition:left .3s; }
+.btn:hover::before { left:0; }
+.btn:hover { box-shadow:0 0 18px rgba(0,212,255,.35); }
+.btn.scanning { color:var(--warn); border-color:var(--warn); animation:scan-pulse .8s ease-in-out infinite; }
+@keyframes scan-pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+
+/* ── Stats ──────────────────────────────────── */
+.stats { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:14px; }
+.sc {
+  background:var(--panel); border:1px solid var(--border);
+  padding:11px 15px; position:relative; overflow:hidden;
+}
+.sc::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--accent); }
+.sc.orange::before { background:var(--accent2); }
+.sc.green::before  { background:var(--accent3); }
+.sc.warn::before   { background:var(--warn); }
+.sc.danger::before { background:var(--danger); }
+.sc-lbl { font-size:10px; color:var(--dim); letter-spacing:1.5px; text-transform:uppercase; font-family:var(--mono); margin-bottom:5px; }
+.sc-val { font-size:22px; font-weight:700; font-family:var(--mono); line-height:1; color:var(--accent); }
+.sc.orange .sc-val { color:var(--accent2); }
+.sc.green  .sc-val { color:var(--accent3); }
+.sc.warn   .sc-val { color:var(--warn); }
+.sc.danger .sc-val { color:var(--danger); }
+.sc-sub { font-size:10px; color:var(--dim); margin-top:3px; font-family:var(--mono); }
+
+/* ── Main grid ──────────────────────────────── */
+.main-grid { display:grid; grid-template-columns:1fr 390px; gap:12px; }
+.panel { background:var(--panel); border:1px solid var(--border); }
+.ph { display:flex; align-items:center; justify-content:space-between; padding:9px 15px; border-bottom:1px solid var(--border); background:rgba(0,212,255,.025); }
+.ph-title { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--accent); font-family:var(--mono); }
+.ph-badge { font-family:var(--mono); font-size:10px; padding:2px 7px; background:rgba(0,212,255,.1); border:1px solid rgba(0,212,255,.3); color:var(--accent); }
+
+/* ── Table ──────────────────────────────────── */
+.tbl-wrap { max-height:500px; overflow-y:auto; }
+table { width:100%; border-collapse:collapse; }
+th {
+  font-family:var(--mono); font-size:10px; color:var(--dim);
+  letter-spacing:1px; text-transform:uppercase; padding:7px 11px;
+  text-align:left; border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,.3); cursor:pointer; user-select:none; white-space:nowrap;
+}
+th:hover { color:var(--accent); }
+td { padding:8px 11px; font-family:var(--mono); font-size:12px; border-bottom:1px solid rgba(26,42,58,.5); white-space:nowrap; }
+tr { cursor:pointer; transition:background .15s; animation:row-in .25s ease forwards; opacity:0; }
+@keyframes row-in { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
+tr:hover { background:rgba(0,212,255,.04); }
+tr.sel { background:rgba(0,212,255,.07); }
+
+.dir-long  { color:var(--accent3); font-weight:700; }
+.dir-short { color:var(--danger);  font-weight:700; }
+.dir-wait  { color:var(--dim); }
+.pos  { color:var(--accent3); }
+.neg  { color:var(--danger); }
+.neu  { color:var(--dim); }
+.tag { font-size:10px; padding:1px 5px; margin-right:2px; }
+.tag-hot  { background:rgba(255,107,53,.15); color:var(--accent2); border:1px solid rgba(255,107,53,.3); }
+.tag-thin { background:rgba(255,204,0,.1);   color:var(--warn);    border:1px solid rgba(255,204,0,.3); }
+.tag-buy  { background:rgba(0,255,157,.1);   color:var(--accent3); border:1px solid rgba(0,255,157,.3); }
+.tag-sell { background:rgba(255,51,85,.1);   color:var(--danger);  border:1px solid rgba(255,51,85,.3); }
+
+/* ── Right column ───────────────────────────── */
+.right-col { display:flex; flex-direction:column; gap:12px; }
+
+/* ── Detail ─────────────────────────────────── */
+.det-sec { padding:15px; }
+.det-name { font-size:26px; font-weight:700; color:var(--accent); font-family:var(--mono); letter-spacing:2px; }
+.det-price { font-size:16px; color:var(--text); font-family:var(--mono); margin:3px 0 10px; }
+.det-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:10px; }
+.di { background:rgba(0,0,0,.3); border:1px solid var(--border); padding:7px 9px; }
+.di .dl { font-size:10px; color:var(--dim); letter-spacing:1px; font-family:var(--mono); margin-bottom:3px; }
+.di .dv { font-size:14px; font-family:var(--mono); color:var(--text); font-weight:600; }
+.dv.a{color:var(--accent)} .dv.g{color:var(--accent3)} .dv.w{color:var(--warn)} .dv.d{color:var(--danger)} .dv.o{color:var(--accent2)}
+
+/* Validity badge */
+.validity-box {
+  margin:10px 0; padding:9px 12px;
+  background:rgba(0,212,255,.04); border:1px solid rgba(0,212,255,.15);
+  font-family:var(--mono); font-size:12px;
+}
+.val-urgency { font-size:13px; font-weight:700; color:var(--warn); }
+.val-advice  { color:var(--dim); margin-top:3px; font-size:11px; }
+.val-drivers { margin-top:5px; display:flex; gap:5px; flex-wrap:wrap; }
+.driver-tag { font-size:10px; padding:1px 6px; background:rgba(255,204,0,.08); border:1px solid rgba(255,204,0,.2); color:var(--warn); }
+
+/* Impact bar */
+.imp-bar { margin:8px 0; }
+.imp-lbl { display:flex; justify-content:space-between; font-size:11px; font-family:var(--mono); color:var(--dim); margin-bottom:3px; }
+.imp-track { height:7px; background:rgba(255,255,255,.05); border:1px solid var(--border); position:relative; overflow:hidden; }
+.imp-fill { height:100%; background:linear-gradient(90deg,var(--accent3),var(--warn),var(--danger)); transition:width .5s; }
+
+/* Order book mini */
+.ob-sec { padding:10px 15px; border-top:1px solid var(--border); }
+.ob-lbl { font-size:10px; color:var(--dim); letter-spacing:1.5px; text-transform:uppercase; font-family:var(--mono); margin-bottom:6px; }
+.ob-row { display:flex; align-items:center; gap:7px; margin-bottom:2px; }
+.ob-p { font-family:var(--mono); font-size:11px; width:82px; }
+.ob-p.ask{color:var(--danger)} .ob-p.bid{color:var(--accent3)}
+.ob-bg { flex:1; height:12px; background:rgba(0,0,0,.3); overflow:hidden; }
+.ob-fill { height:100%; opacity:.25; }
+.ob-fill.ask{background:var(--danger)} .ob-fill.bid{background:var(--accent3)}
+.ob-sz { font-family:var(--mono); font-size:11px; color:var(--dim); width:70px; text-align:right; }
+.ob-spread { text-align:center; font-family:var(--mono); font-size:11px; color:var(--warn); padding:3px 0; border-top:1px dashed var(--border); border-bottom:1px dashed var(--border); margin:3px 0; }
+
+/* Alerts */
+.alert { margin:0 15px 8px; padding:8px 12px; border-left:3px solid var(--accent3); background:rgba(0,255,157,.04); font-family:var(--mono); font-size:11px; color:var(--accent3); animation:alert-in .3s ease; }
+.alert.warn   { border-color:var(--warn);   background:rgba(255,204,0,.04);  color:var(--warn); }
+.alert.danger { border-color:var(--danger); background:rgba(255,51,85,.04);  color:var(--danger); }
+@keyframes alert-in { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+
+/* Exit strategy */
+.exit-sec { padding:0 15px 15px; }
+.exit-title { font-size:10px; font-family:var(--mono); color:var(--dim); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; padding-top:12px; border-top:1px solid var(--border); }
+.exit-lv {
+  display:flex; align-items:center; gap:9px; padding:6px 9px;
+  margin-bottom:4px; background:rgba(0,0,0,.2); border:1px solid var(--border);
+  position:relative; overflow:hidden;
+}
+.exit-lv::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; }
+.exit-lv.l1::before{background:var(--accent3)} .exit-lv.l2::before{background:var(--warn)}
+.exit-lv.l3::before{background:var(--accent2)} .exit-lv.sl::before{background:var(--danger)}
+.exit-pct { font-size:13px; font-weight:700; font-family:var(--mono); width:52px; }
+.exit-lv.l1 .exit-pct{color:var(--accent3)} .exit-lv.l2 .exit-pct{color:var(--warn)}
+.exit-lv.l3 .exit-pct{color:var(--accent2)} .exit-lv.sl .exit-pct{color:var(--danger)}
+.exit-info { flex:1; }
+.ei-lbl { font-size:10px; color:var(--dim); font-family:var(--mono); }
+.ei-price { font-size:12px; font-family:var(--mono); color:var(--text); }
+.exit-portion { font-size:11px; font-family:var(--mono); color:var(--dim); }
+
+/* ── Funding panel ───────────────────────────── */
+.fund-panel { padding:10px 15px; }
+.fund-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid rgba(26,42,58,.5); }
+.fund-coin { font-family:var(--mono); font-size:12px; }
+.fund-rate { font-family:var(--mono); font-size:12px; font-weight:700; }
+.fund-rate.pos{color:var(--danger)} .fund-rate.neg{color:var(--accent3)} .fund-rate.neu{color:var(--dim)}
+.fund-next { font-family:var(--mono); font-size:10px; color:var(--dim); }
+
+/* ── Position Tracker ───────────────────────── */
+#tab-position { display:none; }
+.pos-tracker { padding:18px; }
+.pos-search {
+  display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;
+}
+.pos-search input, .pos-search select {
+  background:var(--panel); border:1px solid var(--border);
+  color:var(--text); font-family:var(--mono); font-size:13px;
+  padding:9px 13px; outline:none; flex:1; min-width:120px;
+}
+.pos-search input:focus, .pos-search select:focus { border-color:var(--accent); }
+.pos-search input::placeholder { color:var(--dim); }
+.pos-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:12px; }
+.pos-card {
+  background:var(--panel); border:1px solid var(--border);
+  padding:0; position:relative; overflow:hidden;
+}
+.pos-card-top {
+  padding:12px 15px; display:flex; align-items:center;
+  justify-content:space-between; border-bottom:1px solid var(--border);
+}
+.pos-sym { font-size:20px; font-weight:700; font-family:var(--mono); color:var(--accent); }
+.pos-dir { font-size:11px; font-weight:700; padding:2px 8px; letter-spacing:1px; }
+.pos-dir.long  { background:rgba(0,255,157,.1);  color:var(--accent3); border:1px solid rgba(0,255,157,.3); }
+.pos-dir.short { background:rgba(255,51,85,.1); color:var(--danger);  border:1px solid rgba(255,51,85,.3); }
+.pos-card-body { padding:12px 15px; }
+.pos-pnl {
+  font-size:28px; font-weight:700; font-family:var(--mono);
+  margin-bottom:10px; line-height:1;
+}
+.pos-pnl.profit { color:var(--accent3); }
+.pos-pnl.loss   { color:var(--danger); }
+.pos-meta { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
+.pm { background:rgba(0,0,0,.3); border:1px solid var(--border); padding:6px 9px; }
+.pm .pl { font-size:10px; color:var(--dim); font-family:var(--mono); margin-bottom:2px; }
+.pm .pv { font-size:13px; font-family:var(--mono); color:var(--text); }
+.pos-exit-title { font-size:10px; color:var(--dim); letter-spacing:1.5px; text-transform:uppercase; font-family:var(--mono); margin-bottom:6px; }
+.pos-fund-warn {
+  margin-bottom:8px; padding:6px 10px;
+  font-family:var(--mono); font-size:11px;
+  border-left:3px solid var(--warn); background:rgba(255,204,0,.04); color:var(--warn);
+}
+.pos-remove {
+  position:absolute; top:8px; right:8px;
+  background:transparent; border:none; color:var(--dim); cursor:pointer;
+  font-size:16px; line-height:1; padding:2px 6px;
+}
+.pos-remove:hover { color:var(--danger); }
+.pos-loading { font-family:var(--mono); font-size:12px; color:var(--dim); padding:12px 0; text-align:center; }
+
+/* loading bar */
+.ld-bar { height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); background-size:200% 100%; animation:ld-sweep 1s linear infinite; display:none; }
+.ld-bar.on { display:block; }
+@keyframes ld-sweep { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+/* placeholder */
+.pholder { padding:36px; text-align:center; color:var(--dim); font-family:var(--mono); font-size:12px; letter-spacing:1px; }
+.pholder .phi { font-size:28px; margin-bottom:10px; opacity:.3; }
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--border)}
+
+@media(max-width:1100px) { .main-grid{grid-template-columns:1fr} .stats{grid-template-columns:repeat(3,1fr)} }
+@media(max-width:600px)  { .stats{grid-template-columns:repeat(2,1fr)} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">◈</div>
+      <div>
+        <h1>THIN LIQ SCANNER</h1>
+        <span>薄流動性動能偵測系統 — Binance 即時資料</span>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <span class="live-txt"><span class="live-dot"></span><span id="lastUpdate">等待掃描</span></span>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('scanner')">◈ 掃描器</button>
+    <button class="tab" onclick="switchTab('position')">◎ 持倉追蹤</button>
+  </div>
+
+  <!-- ═══ SCANNER TAB ═══ -->
+  <div id="tab-scanner">
+
+    <div class="controls">
+      <div class="cg"><label>資金規模 U</label><input type="number" id="capital" value="50000" min="1000" step="5000"></div>
+      <div class="cg"><label>成交量倍數</label><input type="number" id="volMult" value="2" min="1" step="0.5"></div>
+      <div class="cg"><label>市場</label>
+        <select id="market">
+          <option value="both">現貨 + 永續</option>
+          <option value="spot">現貨</option>
+          <option value="perp">永續</option>
+        </select>
+      </div>
+      <div class="cg"><label>最大市值 M</label><input type="number" id="maxMcap" value="500" min="50" step="50"></div>
+      <div class="cg"><label>最低評分</label><input type="number" id="minScore" value="60" min="0" max="100" step="5"></div>
+      <button class="btn" id="scanBtn" onclick="triggerScan()">▶ 掃描</button>
+    </div>
+
+    <div class="stats">
+      <div class="sc">           <div class="sc-lbl">結果數量</div><div class="sc-val" id="sTotal">—</div><div class="sc-sub">符合條件</div></div>
+      <div class="sc green">     <div class="sc-lbl">LONG 信號</div><div class="sc-val" id="sLong">—</div><div class="sc-sub">多頭方向</div></div>
+      <div class="sc danger">    <div class="sc-lbl">SHORT 信號</div><div class="sc-val" id="sShort">—</div><div class="sc-sub">空頭方向</div></div>
+      <div class="sc orange">    <div class="sc-lbl">最高衝擊</div><div class="sc-val" id="sBestImpact">—</div><div class="sc-sub">5萬U可推</div></div>
+      <div class="sc warn">      <div class="sc-lbl">費率警示</div><div class="sc-val" id="sFunding">—</div><div class="sc-sub">|費率|>0.1%</div></div>
+    </div>
+
+    <div class="main-grid">
+
+      <!-- Left: table -->
+      <div class="panel">
+        <div class="ph">
+          <span class="ph-title">◈ 掃描結果</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--dim)">點擊行查看詳情</span>
+            <span class="ph-badge" id="resCount">0 筆</span>
+          </div>
+        </div>
+        <div class="ld-bar" id="ldBar"></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sort('symbol')">幣種</th>
+                <th>市場</th>
+                <th onclick="sort('price')">現價</th>
+                <th onclick="sort('change24h')">24h%</th>
+                <th onclick="sort('volume_mult')">量能倍</th>
+                <th onclick="sort('impact_pct')">衝擊%</th>
+                <th onclick="sort('funding_rate')">費率</th>
+                <th onclick="sort('ls_ratio')">多空比</th>
+                <th onclick="sort('score')">評分</th>
+                <th>方向</th>
+                <th>有效期</th>
+                <th>信號</th>
+              </tr>
+            </thead>
+            <tbody id="scanBody">
+              <tr><td colspan="12"><div class="pholder"><div class="phi">◈</div>點擊「掃描」取得真實 Binance 資料</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right: detail + funding -->
+      <div class="right-col">
+
+        <div class="panel" id="detPanel">
+          <div class="ph">
+            <span class="ph-title" id="detTitle">◈ 幣種詳情</span>
+            <span class="ph-badge" id="detBadge">—</span>
+          </div>
+          <div id="detBody">
+            <div class="pholder"><div class="phi">→</div>點選左側列表</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="ph">
+            <span class="ph-title">◈ 資金費率排行</span>
+            <span class="ph-badge">永續合約</span>
+          </div>
+          <div class="fund-panel" id="fundPanel">
+            <div class="pholder" style="padding:16px">掃描後顯示</div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /main-grid -->
+
+  </div><!-- /tab-scanner -->
+
+  <!-- ═══ POSITION TRACKER TAB ═══ -->
+  <div id="tab-position" style="display:none">
+    <div class="pos-tracker">
+      <div class="pos-search">
+        <input type="text" id="posSymbol" placeholder="輸入幣種，如 PEPE" style="text-transform:uppercase">
+        <input type="number" id="posEntry" placeholder="進場價格">
+        <input type="number" id="posSize" placeholder="倉位 (U)">
+        <select id="posDir">
+          <option value="LONG">LONG ▲</option>
+          <option value="SHORT">SHORT ▼</option>
+        </select>
+        <select id="posMkt">
+          <option value="PERP">永續</option>
+          <option value="SPOT">現貨</option>
+        </select>
+        <button class="btn" onclick="addPosition()">+ 加入追蹤</button>
+      </div>
+      <div class="pos-cards" id="posCards">
+        <div class="pholder" style="grid-column:1/-1;padding:40px">
+          <div class="phi">◎</div>
+          輸入幣種和進場價，追蹤出場建議
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let results = [];
+let sortKey = 'score';
+let sortDir = -1;
+let positions = JSON.parse(localStorage.getItem('positions') || '[]');
+let pollTimer = null;
+
+// ══════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-scanner').style.display  = tab === 'scanner'  ? '' : 'none';
+  document.getElementById('tab-position').style.display = tab === 'position' ? '' : 'none';
+  event.target.classList.add('active');
+  if (tab === 'position') renderPositions();
+}
+
+// ══════════════════════════════════════════════
+// SCAN
+// ══════════════════════════════════════════════
+async function triggerScan() {
+  const btn = document.getElementById('scanBtn');
+  const lb  = document.getElementById('ldBar');
+  btn.textContent = '⟳ 掃描中...';
+  btn.classList.add('scanning');
+  lb.classList.add('on');
+
+  const p = params();
+  try {
+    // Trigger fresh scan
+    await fetch(`/api/scan?${p}&force=1`);
+    // Poll until done
+    await pollUntilDone(p);
+  } catch(e) {
+    console.error(e);
+  } finally {
+    btn.textContent = '▶ 重新掃描';
+    btn.classList.remove('scanning');
+    lb.classList.remove('on');
+  }
+}
+
+function params() {
+  return new URLSearchParams({
+    capital:      document.getElementById('capital').value,
+    min_vol_mult: document.getElementById('volMult').value,
+    market:       document.getElementById('market').value,
+    max_mcap:     document.getElementById('maxMcap').value,
+    min_score:    document.getElementById('minScore').value,
+  }).toString();
+}
+
+async function pollUntilDone(p) {
+  for (let i = 0; i < 60; i++) {
+    await sleep(2000);
+    const res = await fetch(`/api/scan?${p}`);
+    const data = await res.json();
+    if (!data.scanning && data.results) {
+      results = data.results;
+      renderTable();
+      renderStats();
+      renderFunding();
+      if (results.length > 0) renderDetail(results[0]);
+      document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('zh-TW');
+      return;
+    }
+  }
+}
+
+// ══════════════════════════════════════════════
+// TABLE
+// ══════════════════════════════════════════════
+function renderTable() {
+  const tbody = document.getElementById('scanBody');
+  document.getElementById('resCount').textContent = results.length + ' 筆';
+
+  if (!results.length) {
+    tbody.innerHTML = `<tr><td colspan="12"><div class="pholder"><div class="phi">∅</div>無符合條件幣種，請調整參數</div></td></tr>`;
+    return;
+  }
+
+  const sorted = [...results].sort((a,b) => {
+    const av = a[sortKey] ?? 0, bv = b[sortKey] ?? 0;
+    return typeof av === 'string' ? av.localeCompare(bv) * sortDir : (bv - av) * sortDir * -1;
+  });
+
+  tbody.innerHTML = sorted.map((d,i) => {
+    const ch = d.change24h;
+    const chCls = ch > 0 ? 'pos' : ch < 0 ? 'neg' : 'neu';
+    const dirCls = d.direction === 'LONG' ? 'dir-long' : d.direction === 'SHORT' ? 'dir-short' : 'dir-wait';
+    const dirLbl = d.direction === 'LONG' ? 'LONG ▲' : d.direction === 'SHORT' ? 'SHORT ▼' : 'WAIT ◈';
+    const fr = d.funding_rate ?? 0;
+    const frCls = Math.abs(fr) > 0.001 ? (fr > 0 ? 'neg' : 'pos') : 'neu';
+    const ls = d.ls_ratio ?? 0;
+    const lsCls = ls > 2 ? 'neg' : ls < 0.7 ? 'pos' : 'neu';
+    const imp = d.impact_pct ?? 0;
+    const impCls = imp > 80 ? 'neg' : imp > 40 ? '' : 'pos';
+    const hours = d.validity?.hours ?? 0;
+    const urgency = hours <= 1 ? `<span style="color:var(--danger)">⚡ 緊迫</span>` :
+                    hours <= 3 ? `<span style="color:var(--warn)">⏱ ${hours.toFixed(0)}h</span>` :
+                                 `<span style="color:var(--dim)">🕐 ${hours.toFixed(0)}h</span>`;
+
+    const tags = [];
+    if (d.volume_mult > 8) tags.push('<span class="tag tag-hot">🔥</span>');
+    if (imp > 60)           tags.push('<span class="tag tag-thin">⚡</span>');
+    if ((d.taker_buy_ratio??0) > 0.62) tags.push('<span class="tag tag-buy">↑BUY</span>');
+    if ((d.taker_buy_ratio??1) < 0.38) tags.push('<span class="tag tag-sell">↓SELL</span>');
+
+    const mktBadge = d.market === 'PERP'
+      ? `<span style="font-size:10px;padding:1px 5px;background:rgba(255,107,53,.1);border:1px solid rgba(255,107,53,.2);color:var(--accent2)">PERP</span>`
+      : `<span style="font-size:10px;padding:1px 5px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);color:var(--accent)">SPOT</span>`;
+
+    return `<tr onclick="renderDetail(results[${results.indexOf(d)}])" style="animation-delay:${i*.025}s">
+      <td><strong style="color:var(--text)">${d.symbol}</strong></td>
+      <td>${mktBadge}</td>
+      <td>${fmtPrice(d.price)}</td>
+      <td class="${chCls}">${ch>=0?'+':''}${(ch||0).toFixed(2)}%</td>
+      <td style="color:${d.volume_mult>8?'var(--accent2)':d.volume_mult>4?'var(--warn)':'var(--text)'}">${(d.volume_mult||0).toFixed(1)}x</td>
+      <td class="${impCls}">${imp>200?'>200':imp.toFixed(0)}%</td>
+      <td class="${frCls}">${d.market==='PERP'?((fr*100).toFixed(4)+'%'):'—'}</td>
+      <td class="${lsCls}">${d.market==='PERP'?(ls||0).toFixed(2):'—'}</td>
+      <td><span style="font-family:var(--mono);color:${d.score>=80?'var(--accent3)':d.score>=60?'var(--warn)':'var(--dim)'}">${(d.score||0).toFixed(0)}</span></td>
+      <td class="${dirCls}">${dirLbl}</td>
+      <td>${urgency}</td>
+      <td>${tags.join('')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function sort(key) {
+  if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = -1; }
+  renderTable();
+}
+
+// ══════════════════════════════════════════════
+// DETAIL
+// ══════════════════════════════════════════════
+function renderDetail(d) {
+  if (!d) return;
+  document.getElementById('detTitle').textContent = `◈ ${d.symbol} 詳情`;
+  document.getElementById('detBadge').textContent = d.symbol + '/USDT';
+
+  const capital = parseFloat(document.getElementById('capital').value) || 50000;
+  const imp = Math.min(d.impact_pct ?? 0, 999);
+  const impW = Math.min(imp / 2, 100);
+  const fr = d.funding_rate ?? 0;
+  const v = d.validity ?? {};
+
+  // Order book
+  const asks = (d.top_asks || []).slice(0,5).reverse();
+  const bids = (d.top_bids || []).slice(0,5);
+  const maxSz = Math.max(...[...asks,...bids].map(r => r.usdt || 0), 1);
+
+  const askRows = asks.map(r => `
+    <div class="ob-row">
+      <span class="ob-p ask">${fmtPrice(r.price)}</span>
+      <div class="ob-bg"><div class="ob-fill ask" style="width:${Math.min((r.usdt/maxSz)*100,100).toFixed(0)}%"></div></div>
+      <span class="ob-sz">${fmtNum(r.size)}</span>
+    </div>`).join('');
+
+  const bidRows = bids.map(r => `
+    <div class="ob-row">
+      <span class="ob-p bid">${fmtPrice(r.price)}</span>
+      <div class="ob-bg"><div class="ob-fill bid" style="width:${Math.min((r.usdt/maxSz)*100,100).toFixed(0)}%"></div></div>
+      <span class="ob-sz">${fmtNum(r.size)}</span>
+    </div>`).join('');
+
+  // Validity box
+  const drivers = (v.drivers || []).map(x => `<span class="driver-tag">${x}</span>`).join('');
+  const validBox = `
+    <div class="validity-box">
+      <div class="val-urgency">${v.urgency || '—'}</div>
+      <div class="val-advice">${v.advice || ''}</div>
+      ${drivers ? `<div class="val-drivers">${drivers}</div>` : ''}
+    </div>`;
+
+  // Alerts
+  const alertsHtml = (d.alerts || []).map(a =>
+    `<div class="alert ${a.type === 'danger' ? 'danger' : a.type === 'warn' ? 'warn' : ''}">${a.msg}</div>`
+  ).join('');
+
+  // Exit levels
+  const exitHtml = (d.exit_levels || []).map(e => `
+    <div class="exit-lv ${e.cls}">
+      <span class="exit-pct">${e.pct}</span>
+      <div class="exit-info">
+        <div class="ei-lbl">${e.label}</div>
+        <div class="ei-price">${fmtPrice(e.price)}</div>
+      </div>
+      <span class="exit-portion">${e.portion}</span>
+    </div>`).join('');
+
+  const tbr = d.taker_buy_ratio ?? 0.5;
+  const ls = d.ls_ratio ?? 0;
+  const oi = d.open_interest ?? 0;
+
+  document.getElementById('detBody').innerHTML = `
+    <div class="det-sec">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="det-name">${d.symbol}</div>
+          <div class="det-price">${fmtPrice(d.price)}
+            <span style="color:${d.change24h>=0?'var(--accent3)':'var(--danger)'};font-size:13px">
+              ${d.change24h>=0?'+':''}${(d.change24h||0).toFixed(2)}%
+            </span>
+          </div>
+        </div>
+        <span class="${d.direction==='LONG'?'dir-long':d.direction==='SHORT'?'dir-short':'dir-wait'}" style="font-size:14px;font-family:var(--mono)">
+          ${d.direction==='LONG'?'LONG ▲':d.direction==='SHORT'?'SHORT ▼':'WAIT ◈'}
+        </span>
+      </div>
+
+      <div class="det-grid">
+        <div class="di"><div class="dl">成交量倍數</div><div class="dv o">${(d.volume_mult||0).toFixed(1)}x</div></div>
+        <div class="di"><div class="dl">衝擊估算</div><div class="dv ${imp>80?'d':imp>40?'w':'g'}">${imp.toFixed(0)}%</div></div>
+        <div class="di"><div class="dl">深度 ±2%</div><div class="dv a">${fmtNum(d.depth_2pct)} U</div></div>
+        <div class="di"><div class="dl">主動買入比</div><div class="dv ${tbr>0.6?'g':tbr<0.4?'d':'a'}">${(tbr*100).toFixed(0)}%</div></div>
+        <div class="di"><div class="dl">資金費率</div><div class="dv ${d.market==='PERP'?(Math.abs(fr)>0.1?(fr>0?'d':'g'):'a'):'neu'}">${d.market==='PERP'?((fr*100).toFixed(4)+'%'):'N/A'}</div></div>
+        <div class="di"><div class="dl">買賣價差</div><div class="dv ${(d.spread_pct||0)<0.2?'g':(d.spread_pct||0)>0.5?'d':'w'}">${(d.spread_pct||0).toFixed(3)}%</div></div>
+        ${d.market==='PERP'?`
+        <div class="di"><div class="dl">多空比</div><div class="dv ${ls>2?'d':ls<0.7?'g':'a'}">${ls.toFixed(2)}</div></div>
+        <div class="di"><div class="dl">未平倉量</div><div class="dv a">${fmtNum(oi)}</div></div>
+        `:''}
+      </div>
+
+      ${validBox}
+
+      <div class="imp-bar">
+        <div class="imp-lbl"><span>${capital.toLocaleString()}U 進場衝擊</span><span style="color:${imp>80?'var(--danger)':imp>40?'var(--warn)':'var(--accent3)'}">${imp.toFixed(0)}%</span></div>
+        <div class="imp-track"><div class="imp-fill" style="width:${impW}%"></div></div>
+      </div>
+    </div>
+
+    <div class="ob-sec">
+      <div class="ob-lbl">訂單簿快照</div>
+      ${askRows}
+      <div class="ob-spread">SPREAD ${(d.spread_pct||0).toFixed(3)}%</div>
+      ${bidRows}
+    </div>
+
+    ${alertsHtml}
+
+    <div class="exit-sec">
+      <div class="exit-title">◈ 退場策略 — ${d.direction}</div>
+      ${exitHtml}
+      <div style="font-size:10px;font-family:var(--mono);color:var(--dim);margin-top:8px;line-height:1.6">
+        ⚠ 建議分批掛限價單，避免市價大單自我衝擊
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════
+function renderStats() {
+  document.getElementById('sTotal').textContent   = results.length;
+  document.getElementById('sLong').textContent    = results.filter(d => d.direction === 'LONG').length;
+  document.getElementById('sShort').textContent   = results.filter(d => d.direction === 'SHORT').length;
+  const bi = results.length ? Math.max(...results.map(d => d.impact_pct || 0)) : 0;
+  document.getElementById('sBestImpact').textContent = bi > 0 ? Math.min(bi, 999).toFixed(0) + '%' : '—';
+  document.getElementById('sFunding').textContent = results.filter(d => d.market === 'PERP' && Math.abs(d.funding_rate || 0) > 0.001).length;
+}
+
+// ══════════════════════════════════════════════
+// FUNDING
+// ══════════════════════════════════════════════
+async function renderFunding() {
+  try {
+    const res = await fetch('/api/funding');
+    const data = await res.json();
+    const items = data.data || [];
+
+    const nextFunding = (ts) => {
+      if (!ts) return '—';
+      const diff = ts - Date.now();
+      if (diff < 0) return '결산완료';
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      return `${h}h ${m}m`;
+    };
+
+    document.getElementById('fundPanel').innerHTML = items.slice(0,10).map(d => {
+      const fr = d.funding_rate || 0;
+      const cls = fr > 0.05 ? 'pos' : fr < -0.05 ? 'neg' : 'neu';
+      return `<div class="fund-row">
+        <span class="fund-coin">${d.symbol}</span>
+        <span class="fund-rate ${cls}">${(fr*100).toFixed(4)}%</span>
+        <span class="fund-next">${nextFunding(d.next_funding_time)}</span>
+      </div>`;
+    }).join('') || '<div class="pholder" style="padding:14px">無資料</div>';
+  } catch(e) {
+    document.getElementById('fundPanel').innerHTML = '<div class="pholder" style="padding:14px">無法取得費率</div>';
+  }
+}
+
+// ══════════════════════════════════════════════
+// POSITION TRACKER
+// ══════════════════════════════════════════════
+function addPosition() {
+  const sym = document.getElementById('posSymbol').value.trim().toUpperCase();
+  const entry = parseFloat(document.getElementById('posEntry').value);
+  const size  = parseFloat(document.getElementById('posSize').value);
+  const dir   = document.getElementById('posDir').value;
+  const mkt   = document.getElementById('posMkt').value;
+
+  if (!sym || !entry || entry <= 0) {
+    alert('請輸入幣種和進場價格');
+    return;
+  }
+
+  positions.push({ sym, entry, size: size || 0, dir, mkt, id: Date.now() });
+  savePosions();
+  renderPositions();
+
+  document.getElementById('posSymbol').value = '';
+  document.getElementById('posEntry').value  = '';
+  document.getElementById('posSize').value   = '';
+}
+
+function removePosition(id) {
+  positions = positions.filter(p => p.id !== id);
+  savePosions();
+  renderPositions();
+}
+
+function savePosions() {
+  localStorage.setItem('positions', JSON.stringify(positions));
+}
+
+async function renderPositions() {
+  const container = document.getElementById('posCards');
+
+  if (!positions.length) {
+    container.innerHTML = `<div class="pholder" style="grid-column:1/-1;padding:40px"><div class="phi">◎</div>輸入幣種和進場價，追蹤出場建議</div>`;
+    return;
+  }
+
+  container.innerHTML = positions.map(p => `
+    <div class="pos-card" id="pc-${p.id}">
+      <button class="pos-remove" onclick="removePosition(${p.id})">✕</button>
+      <div class="pos-card-top">
+        <span class="pos-sym">${p.sym}</span>
+        <span class="pos-dir ${p.dir.toLowerCase()}">${p.dir === 'LONG' ? 'LONG ▲' : 'SHORT ▼'}</span>
+      </div>
+      <div class="pos-card-body">
+        <div class="pos-loading" id="pl-${p.id}">⟳ 取得即時資料中...</div>
+      </div>
+    </div>`).join('');
+
+  // Fetch live data for each
+  for (const p of positions) {
+    try {
+      const capital = parseFloat(document.getElementById('capital').value) || 50000;
+      const res  = await fetch(`/api/exit/${p.sym}?entry=${p.entry}&direction=${p.dir}&market=${p.mkt}&capital=${capital}`);
+      const data = await res.json();
+
+      if (data.error) {
+        document.getElementById(`pl-${p.id}`).innerHTML = `<span style="color:var(--danger)">${data.error}</span>`;
+        continue;
+      }
+
+      const d = data;
+      const pnlPct = d.pnl_pct ?? 0;
+      const isPnlPos = pnlPct >= 0;
+      const fr = d.funding_rate ?? 0;
+      const hasFundWarn = p.mkt === 'PERP' && (
+        (p.dir === 'LONG' && fr > 0.1) ||
+        (p.dir === 'SHORT' && fr < -0.08)
+      );
+
+      const fundWarn = hasFundWarn ? `
+        <div class="pos-fund-warn">
+          ⚠ 資金費率 ${(fr*100).toFixed(4)}% — ${p.dir === 'LONG' ? '多頭付費，注意持倉成本' : '負費率，空頭付費'}
+        </div>` : '';
+
+      const exitHtml = (d.exit_levels || []).map(e => `
+        <div class="exit-lv ${e.cls}" style="margin-bottom:3px">
+          <span class="exit-pct">${e.pct}</span>
+          <div class="exit-info">
+            <div class="ei-lbl">${e.label}</div>
+            <div class="ei-price">${fmtPrice(e.price)}</div>
+          </div>
+          <span class="exit-portion">${e.portion}</span>
+        </div>`).join('');
+
+      const sizeDisplay = p.size > 0 ? `
+        <div class="pm"><div class="pl">倉位</div><div class="pv">${p.size.toLocaleString()} U</div></div>
+        <div class="pm"><div class="pl">浮動盈虧</div>
+          <div class="pv" style="color:${isPnlPos?'var(--accent3)':'var(--danger)'}">
+            ${isPnlPos?'+':''}${((pnlPct/100)*p.size).toFixed(0)} U
+          </div>
+        </div>` : '';
+
+      document.querySelector(`#pc-${p.id} .pos-card-body`).innerHTML = `
+        <div class="pos-pnl ${isPnlPos?'profit':'loss'}">${isPnlPos?'+':''}${pnlPct.toFixed(2)}%</div>
+        <div class="pos-meta">
+          <div class="pm"><div class="pl">進場價</div><div class="pv">${fmtPrice(p.entry)}</div></div>
+          <div class="pm"><div class="pl">現價</div><div class="pv">${fmtPrice(d.current_price)}</div></div>
+          <div class="pm"><div class="pl">深度 ±2%</div><div class="pv">${fmtNum(d.depth_2pct)} U</div></div>
+          <div class="pm"><div class="pl">買賣價差</div><div class="pv">${(d.spread_pct||0).toFixed(3)}%</div></div>
+          ${sizeDisplay}
+        </div>
+        ${fundWarn}
+        <div class="pos-exit-title">◈ 出場建議</div>
+        ${exitHtml}
+      `;
+    } catch(e) {
+      document.getElementById(`pl-${p.id}`).innerHTML = `<span style="color:var(--danger)">取得資料失敗</span>`;
+    }
+  }
+}
+
+// ══════════════════════════════════════════════
+// AUTO REFRESH positions every 60s
+// ══════════════════════════════════════════════
+setInterval(() => {
+  const posTab = document.getElementById('tab-position');
+  if (posTab && posTab.style.display !== 'none' && positions.length) {
+    renderPositions();
+  }
+}, 60000);
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+function fmtPrice(p) {
+  if (!p || p <= 0) return '—';
+  if (p >= 10000) return p.toFixed(0);
+  if (p >= 1000)  return p.toFixed(1);
+  if (p >= 1)     return p.toFixed(4);
+  if (p >= 0.01)  return p.toFixed(6);
+  return p.toExponential(4);
+}
+
+function fmtNum(n) {
+  if (!n) return '0';
+  if (n >= 1e9)  return (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6)  return (n/1e6).toFixed(2) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return n.toFixed(0);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
