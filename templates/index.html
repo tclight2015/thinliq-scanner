@@ -479,14 +479,26 @@ async function triggerScan() {
   btn.classList.add('scanning');
   lb.classList.add('on');
 
-  const p = params();
   try {
-    // 先強制觸發
+    const p = params();
     await fetch(`/api/scan?${p}&force=1`);
-    // 等2秒讓掃描啟動
-    await sleep(2000);
-    // 再輪詢
-    await pollUntilDone(p);
+    // 等掃描完成，每3秒問一次，最多等3分鐘
+    for (let i = 0; i < 60; i++) {
+      await sleep(3000);
+      const status = await fetch('/api/status').then(r => r.json());
+      if (!status.scanning) {
+        // 掃描完成，抓結果
+        const res = await fetch(`/api/scan?${p}`);
+        const data = await res.json();
+        results = data.results || [];
+        renderTable();
+        renderStats();
+        renderFunding();
+        if (results.length > 0) renderDetail(results[0]);
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('zh-TW');
+        return;
+      }
+    }
   } catch(e) {
     console.error(e);
   } finally {
@@ -506,21 +518,6 @@ function params() {
   }).toString();
 }
 
-async function pollUntilDone(p) {
- for (let i = 0; i < 90; i++) {
-    await sleep(2000);
-    const res = await fetch(`/api/scan?${p}`);
-    const data = await res.json();
-    if (!data.scanning && data.last_scan > 0) {
-      results = data.results || [];
-      renderTable();
-      renderStats();
-      renderFunding();
-      if (results.length > 0) renderDetail(results[0]);
-      document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('zh-TW');
-      return;
-    }
-  }
 
 // ══════════════════════════════════════════════
 // TABLE
