@@ -509,8 +509,8 @@ async function pollUntilDone(p) {
     await sleep(2000);
     const res = await fetch(`/api/scan?${p}`);
     const data = await res.json();
-    if (!data.scanning && data.results) {
-      results = data.results;
+    if (!data.scanning && (data.results || data.count >= 0)) {
+      results = data.results || [];
       renderTable();
       renderStats();
       renderFunding();
